@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [demoLoading, setDemoLoading] = useState(false); // Separate state for demo button
   const router = useRouter();
   const supabase = createClient();
 
@@ -28,38 +29,61 @@ export default function LoginPage() {
       
       if (error) throw error;
 
-      // Get user role from profiles
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', data.user.id)
-        .single();
-
-      const role = profile?.role || 'employee';
-
-      // Redirect based on role
-      switch(role) {
-        case 'admin':
-          router.push('/admin');
-          break;
-        case 'manager':
-          router.push('/manager');
-          break;
-          case 'hr':                    // ← NEW
-          router.push('/hr');
-          break;
-        case 'employee':
-          router.push('/employee');
-          break;
-        default:
-          router.push('/');
-      }
-      
-      router.refresh();
+      await handleRoleBasedRedirect(data.user.id);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Extracted for reuse between normal login and demo login
+  const handleRoleBasedRedirect = async (userId: string) => {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+
+    const role = profile?.role || 'employee';
+
+    switch (role) {
+      case 'admin':
+        router.push('/admin');
+        break;
+      case 'manager':
+        router.push('/manager');
+        break;
+      case 'hr':                    // ← HR Role Support
+        router.push('/hr');
+        break;
+      case 'employee':
+        router.push('/employee');
+        break;
+      default:
+        router.push('/');
+    }
+    
+    router.refresh();
+  };
+
+  const handleDemoLogin = async () => {
+    setDemoLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: 'demo@oratech.com',
+        password: 'Demo@1234',
+      });
+
+      if (error) throw error;
+
+      await handleRoleBasedRedirect(data.user.id);
+    } catch (err: any) {
+      setError(err.message || 'Demo login failed. Please check if demo account exists.');
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -103,11 +127,26 @@ export default function LoginPage() {
             />
           </div>
 
+          {/* Demo Login Button */}
+          <button
+            type="button"
+            onClick={handleDemoLogin}
+            disabled={demoLoading || loading}
+            style={{
+              ...styles.button,
+              background: 'linear-gradient(135deg, #10b981, #059669)',
+              marginTop: '0.5rem',
+              opacity: (demoLoading || loading) ? 0.7 : 1,
+            }}
+          >
+            {demoLoading ? 'Logging in with Demo...' : '🚀 Try Demo Login'}
+          </button>
+
           {error && <p style={styles.error}>{error}</p>}
 
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || demoLoading}
             style={{
               ...styles.button,
               opacity: loading ? 0.7 : 1,
@@ -223,7 +262,6 @@ const styles = {
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
-    marginTop: '1rem',
     boxShadow: '0 4px 6px -1px rgba(30, 58, 138, 0.2)',
   },
   error: {
@@ -235,4 +273,4 @@ const styles = {
     borderRadius: '8px',
     border: '1px solid #fecaca',
   },
-};
+} as const;
