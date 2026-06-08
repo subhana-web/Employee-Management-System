@@ -1,6 +1,5 @@
 // app/auth/login/page.tsx
 'use client';
-
 import { useState } from 'react';
 import { createClient } from '@/lib/supabaseClient';
 import { useRouter } from 'next/navigation';
@@ -8,7 +7,9 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false); // Separate state for demo button
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [showDemoCard, setShowDemoCard] = useState(true); // ← Added this
+
   const router = useRouter();
   const supabase = createClient();
 
@@ -16,19 +17,17 @@ export default function LoginPage() {
     e.preventDefault();
     setError(null);
     setLoading(true);
-
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({ 
-        email, 
-        password 
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
       });
-      
+     
       if (error) throw error;
-
       await handleRoleBasedRedirect(data.user.id);
     } catch (err: any) {
       setError(err.message);
@@ -37,7 +36,6 @@ export default function LoginPage() {
     }
   };
 
-  // Extracted for reuse between normal login and demo login
   const handleRoleBasedRedirect = async (userId: string) => {
     const { data: profile } = await supabase
       .from('profiles')
@@ -46,7 +44,6 @@ export default function LoginPage() {
       .single();
 
     const role = profile?.role || 'employee';
-
     switch (role) {
       case 'admin':
         router.push('/admin');
@@ -54,7 +51,7 @@ export default function LoginPage() {
       case 'manager':
         router.push('/manager');
         break;
-      case 'hr':                    // ← HR Role Support
+      case 'hr':
         router.push('/hr');
         break;
       case 'employee':
@@ -63,22 +60,18 @@ export default function LoginPage() {
       default:
         router.push('/');
     }
-    
     router.refresh();
   };
 
   const handleDemoLogin = async () => {
     setDemoLoading(true);
     setError(null);
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: 'demo@oratech.com',
         password: 'Demo@1234',
       });
-
       if (error) throw error;
-
       await handleRoleBasedRedirect(data.user.id);
     } catch (err: any) {
       setError(err.message || 'Demo login failed. Please check if demo account exists.');
@@ -93,125 +86,139 @@ export default function LoginPage() {
       <div style={styles.curveOverlay}></div>
       <div style={styles.secondCurve}></div>
 
-{/* Demo Credentials Card - Improved */}
-<div style={{
-  position: 'fixed' as const,
-  bottom: '2rem',
-  left: '50%',
-  transform: 'translateX(-50%)',
-  backgroundColor: 'white',
-  borderRadius: '16px',
-  padding: '1.25rem 1.5rem',
-  boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
-  zIndex: 1000,                    // Higher z-index
-  minWidth: '340px',
-  maxWidth: '420px',
-  border: '1px solid #e2e8f0',
-  maxHeight: '85vh',
-  overflowY: 'auto',
-}}>
-  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
-    <p style={{ 
-      margin: 0, 
-      fontSize: '0.85rem', 
-      fontWeight: '700', 
-      color: '#64748b', 
-      textTransform: 'uppercase', 
-      letterSpacing: '0.05em' 
-    }}>
-      🔑 Demo Credentials — Click to Fill
-    </p>
-    {/* Optional Close Button */}
-    <button
-      onClick={() => {
-        const card = document.getElementById('demo-card');
-        if (card) card.style.display = 'none';
-      }}
-      style={{
-        background: 'none',
-        border: 'none',
-        fontSize: '1.1rem',
-        cursor: 'pointer',
-        color: '#94a3b8',
-        padding: '0 4px'
-      }}
-    >
-      ✕
-    </button>
-  </div>
+      {/* Demo Credentials Card */}
+      {showDemoCard && (
+        <div
+          id="demo-card"
+          style={{
+            backgroundColor: '#ffffff',
+            borderRadius: '16px',
+            padding: '1.5rem',
+            boxShadow: '0 10px 30px rgba(0,0,0,0.12)',
+            border: '1px solid #e2e8f0',
+            maxWidth: '420px',
+            width: '100%',
+            marginBottom: '1.5rem',
+            zIndex: 20,
+          }}
+        >
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginBottom: '1rem',
+            }}
+          >
+            <p
+              style={{
+                margin: 0,
+                fontSize: '0.9rem',
+                fontWeight: '700',
+                color: '#64748b',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+              }}
+            >
+              🔑 Demo Credentials — Click to Fill
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowDemoCard(false)}
+              style={{
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                fontSize: '1.2rem',
+                color: '#94a3b8',
+                padding: '0 4px',
+              }}
+            >
+              ✕
+            </button>
+          </div>
 
-  {[
-    { role: 'Admin', email: 'admin@ora.com', password: '123456', color: '#7c3aed' },
-    { role: 'HR', email: 'hr@ora.com', password: '123456', color: '#0891b2' },
-    { role: 'Manager', email: 'manager@ora.com', password: '123456', color: '#059669' },
-    { role: 'Employee', email: 'test2@ora.com', password: '123456', color: '#d97706' },
-  ].map((d) => (
-    <div
-      key={d.role}
-      onClick={() => {
-        const form = document.querySelector('form');
-        if (form) {
-          const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
-          const passInput = form.querySelector('input[name="password"]') as HTMLInputElement;
-          
-          if (emailInput) emailInput.value = d.email.trim();
-          if (passInput) passInput.value = d.password;
-          
-          // Optional: focus password field
-          passInput?.focus();
-        }
-      }}
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '0.75rem',
-        padding: '0.6rem 0.75rem',
-        marginBottom: '0.5rem',
-        borderRadius: '10px',
-        cursor: 'pointer',
-        border: '1px solid #f1f5f9',
-        transition: 'all 0.2s ease',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.background = '#f8fafc';
-        e.currentTarget.style.borderColor = '#e2e8f0';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.background = 'transparent';
-        e.currentTarget.style.borderColor = '#f1f5f9';
-      }}
-    >
-      <span style={{
-        backgroundColor: d.color + '15',
-        color: d.color,
-        fontWeight: '700',
-        fontSize: '0.75rem',
-        padding: '0.25rem 0.6rem',
-        borderRadius: '6px',
-        minWidth: '62px',
-        textAlign: 'center',
-      }}>{d.role}</span>
-      <span style={{ 
-        fontSize: '0.82rem', 
-        color: '#475569', 
-        fontFamily: 'monospace',
-        flex: 1 
-      }}>{d.email}</span>
-    </div>
-  ))}
+          {[
+            { role: 'Admin', email: 'admin@ora.com', password: '123456', color: '#7c3aed' },
+            { role: 'HR', email: 'hr@ora.com', password: '123456', color: '#0891b2' },
+            { role: 'Manager', email: 'manager@ora.com', password: '123456', color: '#059669' },
+            { role: 'Employee', email: 'test2@ora.com', password: '123456', color: '#d97706' },
+          ].map((d) => (
+            <div
+              key={d.role}
+              onClick={() => {
+                const emailInput = document.querySelector('input[name="email"]') as HTMLInputElement;
+                const passwordInput = document.querySelector('input[name="password"]') as HTMLInputElement;
 
-  <p style={{ 
-    margin: '0.75rem 0 0', 
-    fontSize: '0.73rem', 
-    color: '#94a3b8', 
-    textAlign: 'center',
-    lineHeight: '1.4'
-  }}>
-    Click any role → credentials autofill → press Login
-  </p>
-</div>
-      
-      
+                if (emailInput) emailInput.value = d.email;
+                if (passwordInput) passwordInput.value = d.password;
+                passwordInput?.focus();
+
+                // Hide card after selection (optional)
+                setShowDemoCard(false);
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.75rem',
+                marginBottom: '0.5rem',
+                borderRadius: '10px',
+                cursor: 'pointer',
+                border: '1px solid #f1f5f9',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.background = '#f8fafc';
+                e.currentTarget.style.borderColor = '#cbd5e1';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.background = 'white';
+                e.currentTarget.style.borderColor = '#f1f5f9';
+              }}
+            >
+              <span
+                style={{
+                  backgroundColor: `${d.color}15`,
+                  color: d.color,
+                  fontWeight: '700',
+                  fontSize: '0.75rem',
+                  padding: '0.25rem 0.6rem',
+                  borderRadius: '6px',
+                  minWidth: '70px',
+                  textAlign: 'center',
+                }}
+              >
+                {d.role}
+              </span>
+              <span
+                style={{
+                  fontSize: '0.82rem',
+                  color: '#475569',
+                  fontFamily: 'monospace',
+                  flex: 1,
+                }}
+              >
+                {d.email}
+              </span>
+            </div>
+          ))}
+
+          <p
+            style={{
+              margin: '0.75rem 0 0',
+              fontSize: '0.73rem',
+              color: '#94a3b8',
+              textAlign: 'center',
+              lineHeight: '1.4',
+            }}
+          >
+            Click any role → credentials will autofill → press Login
+          </p>
+        </div>
+      )}
+
+      {/* Login Card */}
       <div style={styles.card}>
         <div style={styles.logoContainer}>
           <svg width="60" height="60" viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -221,7 +228,7 @@ export default function LoginPage() {
         </div>
         <h1 style={styles.title}>ORA TECH</h1>
         <p style={styles.subtitle}>Employee Management System</p>
-        
+       
         <form onSubmit={handleLogin} style={styles.form}>
           <div style={styles.inputGroup}>
             <label style={styles.label}>Email</label>
@@ -233,7 +240,6 @@ export default function LoginPage() {
               style={styles.input}
             />
           </div>
-
           <div style={styles.inputGroup}>
             <label style={styles.label}>Password</label>
             <input
