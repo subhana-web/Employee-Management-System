@@ -93,68 +93,121 @@ export default function LoginPage() {
       <div style={styles.curveOverlay}></div>
       <div style={styles.secondCurve}></div>
 
-{/* Demo Credentials Card */}
+{/* Demo Credentials Card - Improved */}
 <div style={{
   position: 'fixed' as const,
-  bottom: '1.5rem',
+  bottom: '2rem',
   left: '50%',
   transform: 'translateX(-50%)',
   backgroundColor: 'white',
   borderRadius: '16px',
   padding: '1.25rem 1.5rem',
-  boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
-  zIndex: 100,
+  boxShadow: '0 10px 40px rgba(0,0,0,0.18)',
+  zIndex: 1000,                    // Higher z-index
   minWidth: '340px',
   maxWidth: '420px',
   border: '1px solid #e2e8f0',
+  maxHeight: '85vh',
+  overflowY: 'auto',
 }}>
-  <p style={{ margin: '0 0 0.75rem', fontSize: '0.8rem', fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-    🔑 Demo Credentials — click to fill
-  </p>
+  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+    <p style={{ 
+      margin: 0, 
+      fontSize: '0.85rem', 
+      fontWeight: '700', 
+      color: '#64748b', 
+      textTransform: 'uppercase', 
+      letterSpacing: '0.05em' 
+    }}>
+      🔑 Demo Credentials — Click to Fill
+    </p>
+    {/* Optional Close Button */}
+    <button
+      onClick={() => {
+        const card = document.getElementById('demo-card');
+        if (card) card.style.display = 'none';
+      }}
+      style={{
+        background: 'none',
+        border: 'none',
+        fontSize: '1.1rem',
+        cursor: 'pointer',
+        color: '#94a3b8',
+        padding: '0 4px'
+      }}
+    >
+      ✕
+    </button>
+  </div>
+
   {[
     { role: 'Admin', email: 'admin@ora.com', password: '123456', color: '#7c3aed' },
     { role: 'HR', email: 'hr@ora.com', password: '123456', color: '#0891b2' },
     { role: 'Manager', email: 'manager@ora.com', password: '123456', color: '#059669' },
-    { role: 'Employee', email: ' test2@ora.com', password: '123456', color: '#d97706' },
+    { role: 'Employee', email: 'test2@ora.com', password: '123456', color: '#d97706' },
   ].map((d) => (
     <div
       key={d.role}
       onClick={() => {
         const form = document.querySelector('form');
         if (form) {
-          (form.querySelector('input[name="email"]') as HTMLInputElement).value = d.email;
-          (form.querySelector('input[name="password"]') as HTMLInputElement).value = d.password;
+          const emailInput = form.querySelector('input[name="email"]') as HTMLInputElement;
+          const passInput = form.querySelector('input[name="password"]') as HTMLInputElement;
+          
+          if (emailInput) emailInput.value = d.email.trim();
+          if (passInput) passInput.value = d.password;
+          
+          // Optional: focus password field
+          passInput?.focus();
         }
       }}
       style={{
         display: 'flex',
         alignItems: 'center',
         gap: '0.75rem',
-        padding: '0.5rem 0.75rem',
-        marginBottom: '0.4rem',
-        borderRadius: '8px',
+        padding: '0.6rem 0.75rem',
+        marginBottom: '0.5rem',
+        borderRadius: '10px',
         cursor: 'pointer',
         border: '1px solid #f1f5f9',
-        transition: 'background 0.15s',
+        transition: 'all 0.2s ease',
       }}
-      onMouseEnter={e => (e.currentTarget.style.background = '#f8fafc')}
-      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+      onMouseEnter={e => {
+        e.currentTarget.style.background = '#f8fafc';
+        e.currentTarget.style.borderColor = '#e2e8f0';
+      }}
+      onMouseLeave={e => {
+        e.currentTarget.style.background = 'transparent';
+        e.currentTarget.style.borderColor = '#f1f5f9';
+      }}
     >
       <span style={{
         backgroundColor: d.color + '15',
         color: d.color,
         fontWeight: '700',
-        fontSize: '0.7rem',
-        padding: '0.2rem 0.5rem',
+        fontSize: '0.75rem',
+        padding: '0.25rem 0.6rem',
         borderRadius: '6px',
-        minWidth: '58px',
+        minWidth: '62px',
         textAlign: 'center',
       }}>{d.role}</span>
-      <span style={{ fontSize: '0.8rem', color: '#475569', fontFamily: 'monospace' }}>{d.email}</span>
+      <span style={{ 
+        fontSize: '0.82rem', 
+        color: '#475569', 
+        fontFamily: 'monospace',
+        flex: 1 
+      }}>{d.email}</span>
     </div>
   ))}
-  <p style={{ margin: '0.5rem 0 0', fontSize: '0.72rem', color: '#94a3b8', textAlign: 'center' }}>
-    Click any role to autofill credentials, then press Login
+
+  <p style={{ 
+    margin: '0.75rem 0 0', 
+    fontSize: '0.73rem', 
+    color: '#94a3b8', 
+    textAlign: 'center',
+    lineHeight: '1.4'
+  }}>
+    Click any role → credentials autofill → press Login
   </p>
 </div>
       
