@@ -7,8 +7,7 @@ import { useRouter } from 'next/navigation';
 export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [demoLoading, setDemoLoading] = useState(false);
-  const [showDemoCard, setShowDemoCard] = useState(true); // ← Added this
+  const [showDemoCard, setShowDemoCard] = useState(true);
 
   const router = useRouter();
   const supabase = createClient();
@@ -61,23 +60,6 @@ export default function LoginPage() {
         router.push('/');
     }
     router.refresh();
-  };
-
-  const handleDemoLogin = async () => {
-    setDemoLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: 'demo@oratech.com',
-        password: 'Demo@1234',
-      });
-      if (error) throw error;
-      await handleRoleBasedRedirect(data.user.id);
-    } catch (err: any) {
-      setError(err.message || 'Demo login failed. Please check if demo account exists.');
-    } finally {
-      setDemoLoading(false);
-    }
   };
 
   return (
@@ -154,7 +136,6 @@ export default function LoginPage() {
                 if (passwordInput) passwordInput.value = d.password;
                 passwordInput?.focus();
 
-                // Hide card after selection (optional)
                 setShowDemoCard(false);
               }}
               style={{
@@ -252,26 +233,11 @@ export default function LoginPage() {
             />
           </div>
 
-          {/* Demo Login Button */}
-          <button
-            type="button"
-            onClick={handleDemoLogin}
-            disabled={demoLoading || loading}
-            style={{
-              ...styles.button,
-              background: 'linear-gradient(135deg, #10b981, #059669)',
-              marginTop: '0.5rem',
-              opacity: (demoLoading || loading) ? 0.7 : 1,
-            }}
-          >
-            {demoLoading ? 'Logging in with Demo...' : '🚀 Try Demo Login'}
-          </button>
-
           {error && <p style={styles.error}>{error}</p>}
 
           <button
             type="submit"
-            disabled={loading || demoLoading}
+            disabled={loading}
             style={{
               ...styles.button,
               opacity: loading ? 0.7 : 1,
@@ -289,12 +255,14 @@ const styles = {
   container: {
     minHeight: '100vh',
     display: 'flex',
+    flexDirection: 'column' as const,
     alignItems: 'center',
     justifyContent: 'center',
     background: 'linear-gradient(135deg, #ffffff 0%, #f0f4f8 100%)',
     position: 'relative' as const,
     overflow: 'hidden',
     fontFamily: 'system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+    padding: '1rem',
   },
   curveOverlay: {
     position: 'absolute' as const,
